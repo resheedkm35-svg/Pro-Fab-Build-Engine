@@ -20,6 +20,10 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    # ആൻഡ്രോയിഡിന് ആവശ്യമായ എല്ലാ SDK ടൂളുകളും ഇവിടെ സെറ്റ് ചെയ്യുന്നു
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
     - name: Setup Android Project Files
       run: |
         mkdir -p app/src/main/assets
@@ -91,15 +95,14 @@ jobs:
         }
         EOF
 
+    # ഇവിടെയാണ് നമ്മൾ മാറ്റം വരുത്തിയത് (NPM പ്രശ്നം ഒഴിവാക്കി ഒഫീഷ്യൽ ഗ്രേഡിൽ വഴി റാപ്പർ ഉണ്ടാക്കുന്നു)
     - name: Setup Gradle Wrapper Engine
       run: |
-        npm install -g gradle-wrapper
-        gradle-wrapper || true
+        gradle wrapper --gradle-version 8.1.1
         chmod +x gradlew
 
     - name: Run Compiler Command From Input Box
       run: |
-        # നിങ്ങൾ ഗിറ്റ്ഹബ്ബിൽ ടൈപ്പ് ചെയ്യുന്ന കമാൻഡ് ഇവിടെ റൺ ആകുന്നു
         if [ "${{ github.event.inputs.custom_command }}" = "gradlew assembleDebug" ]; then
           ./gradlew assembleDebug
           cp app/build/outputs/apk/debug/app-debug.apk ./Pro-Fab-Official.apk
@@ -112,3 +115,4 @@ jobs:
       with:
         name: Pro-Fab-Official-APK
         path: "Pro-Fab-Official.apk"
+
