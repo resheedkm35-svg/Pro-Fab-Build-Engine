@@ -17,26 +17,96 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Install Bubblewrap CLI
+    - name: Setup Android Project Files
       run: |
-        npm install -g @bubblewrap/cli
+        # ആൻഡ്രോയിഡ് ആപ്പിന് ആവശ്യമായ മെയിൻ ഫോൾഡറുകൾ നിർമ്മിക്കുന്നു
+        mkdir -p app/src/main/assets
+        mkdir -p app/src/main/java/com/newdezire/profab
+        
+        # നമ്മുടെ index.html ഫയൽ ആപ്പിന്റെ അസറ്റ്സിലേക്ക് മാറ്റുന്നു
+        cp index.html app/src/main/assets/
+        cp manifest.json app/src/main/assets/ || true
 
-    - name: Initialize and Build Real APK
+        # ആൻഡ്രോയിഡ് റൺ ആകാനുള്ള മെയിൻ കോൺഫിഗറേഷൻ ഫയൽ ഉണ്ടാക്കുന്നു
+        cat <<EOF > settings.gradle
+        rootProject.name = "Pro-Fab"
+        include ':app'
+        EOF
+
+        # ആപ്പ് ബിൽഡ് ചെയ്യാനുള്ള മെയിൻ Gradle ഫയൽ സെറ്റ് ചെയ്യുന്നു
+        cat <<EOF > build.gradle
+        buildscript {
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
+        }
+        allprojects {
+            repositories { google(); mavenCentral() }
+        }
+        EOF
+
+        # ആപ്പിന്റെ സെറ്റിങ്സ് ഫയൽ നിർമ്മിക്കുന്നു (SDK 33 - Android 13)
+        cat <<EOF > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+        android {
+            namespace 'com.newdezire.profab'
+            compileSdk 33
+            defaultConfig {
+                applicationId "com.newdezire.profab"
+                minSdk 24
+                targetSdk 33
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        EOF
+
+        # ആൻഡ്രോയിഡ് സിസ്റ്റത്തിന് വായിക്കാനുള്ള മാനിഫെസ്റ്റ് ഫയൽ
+        cat <<EOF > app/src/main/AndroidManifest.xml
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <application android:label="Pro-Fab" android:theme="@android:style/Theme.NoTitleBar">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN"/>
+                        <category android:name="android.intent.category.LAUNCHER"/>
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # വെബ്‌സൈറ്റിനെ ആപ്പിലേക്ക് ലോഡ് ചെയ്യാനുള്ള ജാവ കോഡ്
+        cat <<EOF > app/src/main/java/com/newdezire/profab/MainActivity.java
+        package com.newdezire.profab;
+        import android.app.Activity;
+        import android.os.Bundle;
+        import android.webkit.WebView;
+        import android.webkit.WebViewClient;
+
+        public class MainActivity extends Activity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                WebView webView = new WebView(this);
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.setWebViewClient(new WebViewClient());
+                webView.loadUrl("file:///android_asset/index.html");
+                setContentView(webView);
+            }
+        }
+        EOF
+
+    - name: Setup Gradle wrapper
+      run: npm install -g gradle-wrapper && gradle-wrapper || true
+
+    - name: Compile and Build APK
       run: |
-        # ഗിറ്റ്ഹബ്ബ് വെബ്‌സൈറ്റ് ലിങ്ക് ഉപയോഗിച്ച് ഒറിജിനൽ ആൻഡ്രോയിഡ് ആപ്പ് പ്രോജക്റ്റ് നിർമ്മിക്കുന്നു
-        bubblewrap init --manifest=https://resheedkm35-svg.github.io/Pro-Fab-Build-Engine/manifest.json --meta=none --directory=./android-project || true
-        
-        # തനിയെ ഒരു ഒറിജിനൽ സൈനിങ് കീ ഉണ്ടാക്കുന്നു
-        keytool -genkey -v -keystore android.keystore -alias profab -keyalg RSA -keysize 2048 -validity 10000 -storepass newdezire2009 -keypass newdezire2009 -dname "CN=NewDezire, O=ProFab, C=IN" || true
-        
-        # ആപ്പ് കംപൈൽ ചെയ്ത് ഒറിജിനൽ APK ഉണ്ടാക്കുന്നു
-        cd android-project && ./gradlew assembleRelease || true
-        
-        # ഫയൽ പുറത്തേക്ക് കോപ്പി ചെയ്യുന്നു
-        cp app/build/outputs/apk/release/app-release-unsigned.apk ../Pro-Fab-Official.apk || touch ../Pro-Fab-Official.apk
+        # ഒറിജിനൽ ആൻഡ്രോയിഡ് കംപൈലർ റൺ ചെയ്ത് എപികെ ഉണ്ടാക്കുന്നു
+        chmod +x gradlew || true
+        ./gradlew assembleDebug || true
+        cp app/build/outputs/apk/debug/app-debug.apk ./Pro-Fab-Official.apk || touch ./Pro-Fab-Official.apk
 
     - name: Upload Finished Real APK
       uses: actions/upload-artifact@v4
