@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       custom_command:
-        description: 'Enter your custom build command if needed'
+        description: 'Enter command if needed'
         required: false
-        default: 'gradlew assembleDebug'
+        default: 'build'
 
 jobs:
   build:
@@ -13,6 +13,11 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Set up NodeJS
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -23,96 +28,27 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    # ഇവിടെ നമ്മൾ ഗ്രേഡിൽ വേർഷൻ 8.1.1 ആയി ലോക്ക് ചെയ്യുന്നു (പ്രശ്നം തീർക്കാൻ)
-    - name: Setup Gradle Engine Version
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '8.1.1'
+    # ഇവിടെ നമ്മൾ Cordova എഞ്ചിൻ പൂർണ്ണമായി ഇൻസ്റ്റാൾ ചെയ്യുന്നു
+    - name: Install Cordova CLI
+      run: npm install -g cordova
 
-    - name: Setup Android Project Files
+    # ഇവിടെയാണ് ഒറിജിനൽ ആൻഡ്രോയിഡ് ആപ്പ് സ്ട്രക്ചർ നിർമ്മിച്ച് index.html ഉള്ളിലേക്ക് കോപ്പി ചെയ്യുന്നത്
+    - name: Initialize and Build Working APK
       run: |
-        mkdir -p app/src/main/assets
-        mkdir -p app/src/main/java/com/newdezire/profab
-        cp index.html app/src/main/assets/
-        cp manifest.json app/src/main/assets/ || true
-
-        cat <<EOF > settings.gradle
-        rootProject.name = "Pro-Fab"
-        include ':app'
-        EOF
-
-        cat <<EOF > build.gradle
-        buildscript {
-            repositories { google(); mavenCentral() }
-            dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
-        }
-        allprojects {
-            repositories { google(); mavenCentral() }
-        }
-        EOF
-
-        cat <<EOF > app/build.gradle
-        plugins { id 'com.android.application' }
-        android {
-            namespace 'com.newdezire.profab'
-            compileSdk 33
-            defaultConfig {
-                applicationId "com.newdezire.profab"
-                minSdk 24
-                targetSdk 33
-                versionCode 1
-                versionName "1.0"
-            }
-        }
-        EOF
-
-        cat <<EOF > app/src/main/AndroidManifest.xml
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.INTERNET"/>
-            <application android:label="Pro-Fab" android:theme="@android:style/Theme.NoTitleBar">
-                <activity android:name=".MainActivity" android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN"/>
-                        <category android:name="android.intent.category.LAUNCHER"/>
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
-
-        cat <<EOF > app/src/main/java/com/newdezire/profab/MainActivity.java
-        package com.newdezire.profab;
-        import android.app.Activity;
-        import android.os.Bundle;
-        import android.webkit.WebView;
-        import android.webkit.WebViewClient;
-
-        public class MainActivity extends Activity {
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                WebView webView = new WebView(this);
-                webView.getSettings().setJavaScriptEnabled(true);
-                webView.setWebViewClient(new WebViewClient());
-                webView.loadUrl("file:///android_asset/index.html");
-                setContentView(webView);
-            }
-        }
-        EOF
-
-    - name: Generate Local Wrapper
-      run: |
-        gradle wrapper --gradle-version 8.1.1
-        chmod +x gradlew
-
-    - name: Run Compiler Command From Input Box
-      run: |
-        if [ "${{ github.event.inputs.custom_command }}" = "gradlew assembleDebug" ]; then
-          ./gradlew assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk ./Pro-Fab-Official.apk
-        else
-          ${{ github.event.inputs.custom_command }}
-        fi
+        cordova create profab-app com.newdezire.profab ProFab
+        cd profab-app
+        cordova platform add android
+        
+        # നമ്മുടെ വെബ്‌സൈറ്റ് ഫയലുകൾ ആപ്പിന്റെ ഉള്ളിലേക്ക് മാറ്റുന്നു
+        rm -rf www/*
+        cp ../index.html www/ || true
+        cp ../manifest.json www/ || true
+        
+        # ആപ്പ് ഒഫീഷ്യലായി കംപൈൽ ചെയ്ത് ഒറിജിനൽ APK ഉണ്ടാക്കുന്നു
+        cordova build android --debug
+        
+        # ഉണ്ടായ ശരിക്കുള്ള ഫയൽ പുറത്തേക്ക് കോപ്പി ചെയ്യുന്നു
+        cp platforms/android/app/build/outputs/apk/debug/app-debug.apk ../Pro-Fab-Official.apk
 
     - name: Upload Finished Real APK
       uses: actions/upload-artifact@v4
