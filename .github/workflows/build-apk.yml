@@ -1,8 +1,11 @@
 name: Build Official Pro-Fab APK
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      custom_command:
+        description: 'Enter your custom build command if needed'
+        required: false
+        default: 'gradlew assembleDebug'
 
 jobs:
   build:
@@ -19,21 +22,16 @@ jobs:
 
     - name: Setup Android Project Files
       run: |
-        # ആൻഡ്രോയിഡ് ആപ്പിന് ആവശ്യമായ മെയിൻ ഫോൾഡറുകൾ നിർമ്മിക്കുന്നു
         mkdir -p app/src/main/assets
         mkdir -p app/src/main/java/com/newdezire/profab
-        
-        # നമ്മുടെ index.html ഫയൽ ആപ്പിന്റെ അസറ്റ്സിലേക്ക് മാറ്റുന്നു
         cp index.html app/src/main/assets/
         cp manifest.json app/src/main/assets/ || true
 
-        # ആൻഡ്രോയിഡ് റൺ ആകാനുള്ള മെയിൻ കോൺഫിഗറേഷൻ ഫയൽ ഉണ്ടാക്കുന്നു
         cat <<EOF > settings.gradle
         rootProject.name = "Pro-Fab"
         include ':app'
         EOF
 
-        # ആപ്പ് ബിൽഡ് ചെയ്യാനുള്ള മെയിൻ Gradle ഫയൽ സെറ്റ് ചെയ്യുന്നു
         cat <<EOF > build.gradle
         buildscript {
             repositories { google(); mavenCentral() }
@@ -44,11 +42,8 @@ jobs:
         }
         EOF
 
-        # ആപ്പിന്റെ സെറ്റിങ്സ് ഫയൽ നിർമ്മിക്കുന്നു (SDK 33 - Android 13)
         cat <<EOF > app/build.gradle
-        plugins {
-            id 'com.android.application'
-        }
+        plugins { id 'com.android.application' }
         android {
             namespace 'com.newdezire.profab'
             compileSdk 33
@@ -62,7 +57,6 @@ jobs:
         }
         EOF
 
-        # ആൻഡ്രോയിഡ് സിസ്റ്റത്തിന് വായിക്കാനുള്ള മാനിഫെസ്റ്റ് ഫയൽ
         cat <<EOF > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET"/>
@@ -77,7 +71,6 @@ jobs:
         </manifest>
         EOF
 
-        # വെബ്‌സൈറ്റിനെ ആപ്പിലേക്ക് ലോഡ് ചെയ്യാനുള്ള ജാവ കോഡ്
         cat <<EOF > app/src/main/java/com/newdezire/profab/MainActivity.java
         package com.newdezire.profab;
         import android.app.Activity;
@@ -98,15 +91,21 @@ jobs:
         }
         EOF
 
-    - name: Setup Gradle wrapper
-      run: npm install -g gradle-wrapper && gradle-wrapper || true
-
-    - name: Compile and Build APK
+    - name: Setup Gradle Wrapper Engine
       run: |
-        # ഒറിജിനൽ ആൻഡ്രോയിഡ് കംപൈലർ റൺ ചെയ്ത് എപികെ ഉണ്ടാക്കുന്നു
-        chmod +x gradlew || true
-        ./gradlew assembleDebug || true
-        cp app/build/outputs/apk/debug/app-debug.apk ./Pro-Fab-Official.apk || touch ./Pro-Fab-Official.apk
+        npm install -g gradle-wrapper
+        gradle-wrapper || true
+        chmod +x gradlew
+
+    - name: Run Compiler Command From Input Box
+      run: |
+        # നിങ്ങൾ ഗിറ്റ്ഹബ്ബിൽ ടൈപ്പ് ചെയ്യുന്ന കമാൻഡ് ഇവിടെ റൺ ആകുന്നു
+        if [ "${{ github.event.inputs.custom_command }}" = "gradlew assembleDebug" ]; then
+          ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ./Pro-Fab-Official.apk
+        else
+          ${{ github.event.inputs.custom_command }}
+        fi
 
     - name: Upload Finished Real APK
       uses: actions/upload-artifact@v4
