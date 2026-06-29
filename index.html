@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-Fab Build Terminal</title>
+    <style>
+        body { background-color: #0d1117; color: #39ff14; font-family: monospace; padding: 15px; margin: 0; }
+        .terminal-box { border: 1px solid #30363d; padding: 10px; background: #161b22; border-radius: 6px; min-height: 200px; }
+        .input-line { display: flex; margin-top: 10px; }
+        .prompt { color: #58a6ff; margin-right: 5px; }
+        input { background: transparent; border: none; color: #fff; font-family: monospace; font-size: 16px; width: 100%; outline: none; }
+        button { background: #238636; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>📟 Pro-Fab Mini Engine</h2>
+    <div class="terminal-box" id="logBox">
+        <div>[System] Ready to Inject Sketchware files...</div>
+        <div>[System] Target Setting: Android 13 (API 33)</div>
+    </div>
+    
+    <div class="input-line">
+        <span class="prompt">NewDezire$</span>
+        <input type="text" id="cmdInput" placeholder="Enter build command...">
+    </div>
+
+    <button onclick="startBuild()">START INJECT & BUILD</button>
+
+    <script>
+        function startBuild() {
+            let log = document.getElementById('logBox');
+            log.innerHTML += "<div style='color:yellow;'>[+] Injecting source code to GitHub...</div>";
+            log.innerHTML += "<div style='color:cyan;'>[+] Triggering Java 17 Engine...</div>";
+            // ഭാവിയിൽ ടോക്കൺ വെച്ച് കണക്ട് ചെയ്യാനുള്ള ബാക്കി കോഡ് ഇവിടെ വരും
+        }
+    </script>
+</body>
+</html>
+
