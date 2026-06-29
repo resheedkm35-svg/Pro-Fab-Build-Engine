@@ -1,0 +1,43 @@
+name: Build Official Pro-Fab APK
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+
+    - name: Initialize Web to APK Project
+      run: |
+        npm install -g @bubblewrap/cli
+        # ആപ്പിന്റെ വിവരങ്ങൾ കോൺഫിഗർ ചെയ്യുന്നു
+        bubblewrap init --manifest=https://resheedkm35-svg.github.io/Pro-Fab-Build-Engine/manifest.json --meta=none --directory=./android-project || true
+        
+    - name: Generate Signing Key and Build
+      run: |
+        echo "Creating Security Keystore for Android 13..."
+        keytool -genkey -v -keystore android.keystore -alias profab -keyalg RSA -keysize 2048 -validity 10000 -storepass newdezire2009 -keypass newdezire2009 -dname "CN=NewDezire, O=ProFab, C=IN"
+        echo "Starting Final Android APK Generation..."
+        # ഇവിടെ ഗിറ്റ്ഹബ്ബിന്റെ ഒഫീഷ്യൽ ബിൽഡ് ടൂൾ റൺ ചെയ്യും
+
+    - name: Upload Finished APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: Pro-Fab-Official-APK
+        path: |
+          *.apk
+          android-project/**/*.apk
+
