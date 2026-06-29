@@ -20,9 +20,14 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # ആൻഡ്രോയിഡിന് ആവശ്യമായ എല്ലാ SDK ടൂളുകളും ഇവിടെ സെറ്റ് ചെയ്യുന്നു
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+
+    # ഇവിടെ നമ്മൾ ഗ്രേഡിൽ വേർഷൻ 8.1.1 ആയി ലോക്ക് ചെയ്യുന്നു (പ്രശ്നം തീർക്കാൻ)
+    - name: Setup Gradle Engine Version
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.1.1'
 
     - name: Setup Android Project Files
       run: |
@@ -95,8 +100,7 @@ jobs:
         }
         EOF
 
-    # ഇവിടെയാണ് നമ്മൾ മാറ്റം വരുത്തിയത് (NPM പ്രശ്നം ഒഴിവാക്കി ഒഫീഷ്യൽ ഗ്രേഡിൽ വഴി റാപ്പർ ഉണ്ടാക്കുന്നു)
-    - name: Setup Gradle Wrapper Engine
+    - name: Generate Local Wrapper
       run: |
         gradle wrapper --gradle-version 8.1.1
         chmod +x gradlew
@@ -115,4 +119,3 @@ jobs:
       with:
         name: Pro-Fab-Official-APK
         path: "Pro-Fab-Official.apk"
-
