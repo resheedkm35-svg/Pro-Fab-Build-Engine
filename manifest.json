@@ -1,0 +1,10 @@
+{
+  "name": "Pro-Fab Build Engine",
+  "short_name": "ProFab",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#238636",
+  "orientation": "portrait"
+}
+
