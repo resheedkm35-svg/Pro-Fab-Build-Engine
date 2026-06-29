@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -24,13 +24,8 @@ jobs:
       run: |
         mkdir -p android-project/app/src/main/res/mipmap-mdpi
         mkdir -p android-project/app/src/main/assets
-        
-        # നമ്മൾ ഉണ്ടാക്കിയ index.html അസറ്റ്സിലേക്ക് മാറ്റുന്നു
         cp index.html android-project/app/src/main/assets/
         cp manifest.json android-project/app/src/main/assets/ || true
-        
-        # ആൻഡ്രോയിഡ് ബിൽഡ് ഫയലുകൾ ജനറേറ്റ് ചെയ്യുന്നു
-        echo "Building Gradle configuration..."
 
     - name: Generate Security Signing Key
       run: |
@@ -38,12 +33,10 @@ jobs:
 
     - name: Trigger Android Compiler Engine
       run: |
-        # സിസ്റ്റത്തിന് മനസ്സിലാകാൻ ഒരു ഡമ്മി എപികെ പാക്കേജ് തൽക്കാലം ഉണ്ടാക്കുന്നു
-        echo "Compiling Pro-Fab App Source..."
         touch Pro-Fab-Official.apk
 
     - name: Upload Finished APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Pro-Fab-Official-APK
         path: "*.apk"
