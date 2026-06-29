@@ -32,7 +32,7 @@ jobs:
     - name: Install Cordova CLI
       run: npm install -g cordova
 
-    # ഇവിടെയാണ് ഒറിജിനൽ ആൻഡ്രോയിഡ് ആപ്പ് സ്ട്രക്ചർ നിർമ്മിച്ച് index.html ഉള്ളിലേക്ക് കോപ്പി ചെയ്യുന്നത്
+    # ഇവിടെയാണ് നമ്മൾ ഫയൽ പെർമിഷനുകൾ ആപ്പിലേക്ക് ഇൻജക്റ്റ് ചെയ്യുന്നത്
     - name: Initialize and Build Working APK
       run: |
         cordova create profab-app com.newdezire.profab ProFab
@@ -43,6 +43,14 @@ jobs:
         rm -rf www/*
         cp ../index.html www/ || true
         cp ../manifest.json www/ || true
+        
+        # ആൻഡ്രോയിഡ് ആപ്പിലേക്ക് ഫയൽ പെർമിഷനുകൾ മാന്വലായി ഇൻജക്റ്റ് ചെയ്യുന്നു
+        MANIFEST_PATH="platforms/android/app/src/main/AndroidManifest.xml"
+        
+        # ആപ്പിൽ സ്റ്റോറേജ് പെർമിഷൻ ടാഗുകൾ ചേർക്കുന്നു
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>' $MANIFEST_PATH
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>' $MANIFEST_PATH
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" \/>' $MANIFEST_PATH
         
         # ആപ്പ് ഒഫീഷ്യലായി കംപൈൽ ചെയ്ത് ഒറിജിനൽ APK ഉണ്ടാക്കുന്നു
         cordova build android --debug
@@ -55,4 +63,3 @@ jobs:
       with:
         name: Pro-Fab-Official-APK
         path: "Pro-Fab-Official.apk"
-
